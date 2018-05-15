@@ -9,5 +9,8 @@
   "keywords": [],
   "author": "Michelle Tilley <michelle@michelletilley.net>",
   "license": "MIT",
-  "private": true
+  "private": true,
+  "dependencies": {
+    "node-gir": "git+https://github.com/Place1/node-gir.git"
+  }
 }
