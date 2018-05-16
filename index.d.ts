@@ -6,6 +6,10 @@ declare namespace JSX {
 }
 
 declare module "node-gir" {
+  export interface GtkBindings {
+    main: () => void;
+    mainQuit: () => void;
+  }
   export const Gtk: any;
 }
 
@@ -23,7 +27,7 @@ declare module "react-reconciler" {
       element: JSX.Element,
       container: ReactContainer<T>,
       parentComponent?: React.Component,
-      callback?: (...any) => void
+      callback?: () => void
     ): any;
     getPublicRootInstance<T>(container: ReactContainer<T>): any;
   }

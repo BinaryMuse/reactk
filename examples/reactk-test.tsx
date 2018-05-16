@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import ReacTK from "../index";
-import gtk from "../gtk";
+import { Gtk as gtk } from "node-gir";
 
 interface AppState {
   clickCount: number;
@@ -40,6 +40,6 @@ class Application extends React.Component<{}, AppState> {
   }
 }
 
-ReacTK.render(<Application />, () => {
+ReacTK.render(<Application />, gtk, () => {
   console.log("Started!");
 });

@@ -1,22 +1,32 @@
 import * as React from "react";
 import { ReactElement } from "react";
-import { Gtk as gtk } from "node-gir";
+import { GtkBindings } from "node-gir";
 
 import GtkReconciler from "./src/reconciler";
 
 class GtkApi {
+  private gtkBindings: GtkBindings;
+
+  constructor(gtkBindings) {
+    this.gtkBindings = gtkBindings;
+  }
+
+  startGtk() {
+    this.gtkBindings.main();
+  }
+
   createGtkWidget(type, props) {
-    const constructor = gtk[type]; // e.g. gtk.Window
+    const constructor = this.gtkBindings[type]; // e.g. gtk.Window
     return new constructor(props);
   }
 
   stopGtk() {
-    gtk.mainQuit();
+    this.gtkBindings.mainQuit();
   }
 }
 
 const ReacTK = {
-  render(element, callback) {
+  render(element: JSX.Element, gtkBindings: GtkBindings, callback: () => void) {
     // Your renderer's container info is any information that the Reconciler
     // will need to do it's job during React's lifetime. Here we're using a
     // reference to a GTK+3 API, but you might have a handle to a native class
@@ -24,7 +34,7 @@ const ReacTK = {
     //
     // React will make this object available to the Reconciler during certain
     // lifecycle hooks.
-    const containerInfo = new GtkApi();
+    const containerInfo = new GtkApi(gtkBindings);
 
     // There's no way the React bindings created for a host environment can have
     // access to dynamic, non-global resources until runtime; so, we pass React
@@ -38,7 +48,7 @@ const ReacTK = {
     GtkReconciler.updateContainer(element, root, undefined, callback);
 
     // Start the GTK event loop.
-    gtk.main();
+    containerInfo.startGtk();
   }
 };
 
