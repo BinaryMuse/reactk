@@ -17,12 +17,6 @@ class GtkApi {
 
 const ReacTK = {
   render(element, callback) {
-    // Our container is a sort of "environment" in which the host React
-    // application will live. It can be anything. Here, we're using an instance
-    // of a GTK+ 3 API, but you might have a handle to a window, a reference to a
-    // 3D drawing context, or some other dynamically allocated, non-global
-    // resource.
-
     // Your renderer's container info is any information that the Reconciler
     // will need to do it's job during React's lifetime. Here we're using a
     // reference to a GTK+3 API, but you might have a handle to a native class
@@ -42,6 +36,8 @@ const ReacTK = {
     // Kick off a render by asking our reconciler to update the react container
     // above with the element the user provided.
     GtkReconciler.updateContainer(element, root, undefined, callback);
+
+    // Start the GTK event loop.
     gtk.main();
   }
 };
