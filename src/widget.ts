@@ -66,6 +66,9 @@ function capitalize(str: string) {
   return str[0].toUpperCase() + str.substr(1);
 }
 
+// Turns React style props to options that can be passed
+// to GTK widget constructors. Dasherizes all props and
+// removes `children`.
 function formatPropsForGtk(props: Props): Props {
   const newProps: Props = Object.keys(props).reduce((acc, key) => {
     const newKey = dasherize(key);
@@ -78,17 +81,17 @@ function formatPropsForGtk(props: Props): Props {
 }
 
 function collectSignals(
-  props: Props
+  dasherizedProps: Props
 ): { normalProps: Props; signals: SignalSet } {
   const normalProps = {};
   const signals = {};
 
-  for (const key of Object.keys(props)) {
+  for (const key of Object.keys(dasherizedProps)) {
     if (isSignal(key)) {
       const newKey = key.substr(3); // e.g. strip "on-" from "on-clicked"
-      signals[newKey] = props[key];
+      signals[newKey] = dasherizedProps[key];
     } else {
-      normalProps[key] = props[key];
+      normalProps[key] = dasherizedProps[key];
     }
   }
 
@@ -136,12 +139,12 @@ export class WidgetWrapper {
   }
 
   // Called by our reconciler
-  public add(child: WidgetWrapper) {
+  public add(child: WidgetWrapper): void {
     this.gtkWidget.add(child.getGtkWidget());
   }
 
   // Called by our reconciler
-  public remove(child: WidgetWrapper) {
+  public remove(child: WidgetWrapper): void {
     this.gtkWidget.remove(child.getGtkWidget());
   }
 
@@ -201,11 +204,11 @@ export class WidgetWrapper {
     updatePayload: UpdatePayload,
     oldProps: Props,
     newProps: Props
-  ) {
+  ): void {
     this.applyPropertyUpdates(updatePayload);
   }
 
-  protected applyPropertyUpdates(updatePayload: UpdatePayload) {
+  protected applyPropertyUpdates(updatePayload: UpdatePayload): void {
     this.setSignals(updatePayload.signalSet);
     for (const update of Object.keys(updatePayload.propertyUpdates)) {
       const widget = this.getGtkWidget() as any;
@@ -213,7 +216,7 @@ export class WidgetWrapper {
     }
   }
 
-  protected setSignals(signals: SignalSet) {
+  protected setSignals(signals: SignalSet): void {
     // Remove any existing signals that aren't in the new set
     const currentSignals = [...this.signals.keys()];
     currentSignals.forEach(signal => {
@@ -228,7 +231,7 @@ export class WidgetWrapper {
     }
   }
 
-  protected attachSignal(signal: string, callback: Function) {
+  protected attachSignal(signal: string, callback: Function): void {
     // Only one connection per signal per widget allowed
     if (this.signals.has(signal)) {
       const sig = this.signals.get(signal)!;
@@ -250,7 +253,7 @@ export class WidgetWrapper {
     }
   }
 
-  protected detachSignal(signal) {
+  protected detachSignal(signal): void {
     const sig = this.signals.get(signal);
     if (sig) {
       this.signals.delete(signal);
@@ -305,7 +308,10 @@ export class Button extends WidgetWrapper {
     container: Container,
     hostContext: HostContext
   ): boolean {
-    if (props.children && typeof props.children === "string") {
+    if (
+      props.children &&
+      (typeof props.children === "string" || typeof props.children === "number")
+    ) {
       return true;
     }
 
