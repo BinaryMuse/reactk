@@ -96,8 +96,6 @@ function collectSignals(
 }
 
 export class WidgetWrapper {
-  protected props: Props;
-  private type: string;
   private signals: Map<string, Signal> = new Map();
   private gtkWidget: GtkWidget;
 
@@ -125,7 +123,6 @@ export class WidgetWrapper {
     container: Container,
     hostContext: HostContext
   ) {
-    this.props = props;
     const fixedProps = formatPropsForGtk(props);
     const { normalProps, signals } = collectSignals(fixedProps);
 
@@ -199,7 +196,6 @@ export class WidgetWrapper {
     oldProps: Props,
     newProps: Props
   ) {
-    this.props = newProps;
     this.applyPropertyUpdates(updatePayload);
   }
 
@@ -241,7 +237,9 @@ export class WidgetWrapper {
       this.signals.set(signal, { handle, callback });
     } catch {
       throw new Error(
-        `Could not attach signal '${signal}' to widget of type '${this.type}'`
+        `Could not attach signal '${signal}' to widget of type '${
+          (this.constructor as typeof WidgetWrapper).type
+        }'`
       );
     }
   }
