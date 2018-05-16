@@ -147,11 +147,12 @@ export class WidgetWrapper {
 
   // Called by our reconciler
   public finalizeInitialChildren(
+    type: string,
     props: Props,
     container: Container,
     hostContext: Props
-  ) {
-    // no-op
+  ): boolean {
+    return false;
   }
 
   // Called by our reconciler
@@ -187,6 +188,11 @@ export class WidgetWrapper {
     }
 
     return updatePayload;
+  }
+
+  // Called by our reconciler
+  public commitMount(type: string, props: Props): void {
+    // no-op, only caled if `finalizeInitialChildren` returns true
   }
 
   // Called by our reconciler
@@ -257,12 +263,15 @@ export class Window extends WidgetWrapper {
   public static readonly type: string = "Window";
 
   public finalizeInitialChildren(
+    type: string,
     props: Props,
     container: Container,
     hostContext: HostContext
-  ) {
+  ): boolean {
+    // Feels like this should go in commitMount,
+    // but we need info from the host context
+    // to decide when to stop the GTK event loop.
     const win = this.getGtkWidget();
-    win.showAll();
     hostContext.openWindows++;
     win.connect("destroy", () => {
       hostContext.openWindows--;
@@ -270,6 +279,13 @@ export class Window extends WidgetWrapper {
         container.stopGtk();
       }
     });
+
+    return true;
+  }
+
+  public commitMount(type: string, props: Props): void {
+    const win = this.getGtkWidget();
+    win.showAll();
   }
 }
 
@@ -284,13 +300,16 @@ export class Button extends WidgetWrapper {
   }
 
   public finalizeInitialChildren(
+    type: string,
     props: Props,
     container: Container,
     hostContext: HostContext
-  ) {
+  ): boolean {
     if (props.children && typeof props.children === "string") {
-      this.getGtkWidget().setLabel(props.children);
+      return true;
     }
+
+    return false;
   }
 
   public prepareUpdate(
@@ -306,5 +325,9 @@ export class Button extends WidgetWrapper {
     }
 
     return payload;
+  }
+
+  public commitMount(type: string, props: Props): void {
+    this.getGtkWidget().setLabel(props.children);
   }
 }

@@ -40,7 +40,8 @@ const hostConfig = {
     rootContainerInstance,
     hostContext
   ) {
-    parentInstance.finalizeInitialChildren(
+    return parentInstance.finalizeInitialChildren(
+      type,
       props,
       rootContainerInstance,
       hostContext
@@ -113,8 +114,7 @@ const hostConfig = {
     },
 
     commitMount(instance, type, newProps, internalInstanceHandle) {
-      // When does this get called?
-      console.log("commitMount", instance, type, newProps);
+      instance.commitMount(type, newProps);
     },
 
     commitTextUpdate(textInstance, oldText, newText) {
