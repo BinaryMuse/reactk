@@ -203,7 +203,7 @@ export class WidgetWrapper {
     this.applyPropertyUpdates(updatePayload);
   }
 
-  protected applyPropertyUpdates(updatePayload: Props) {
+  protected applyPropertyUpdates(updatePayload: UpdatePayload) {
     this.setSignals(updatePayload.signalSet);
     for (const update of Object.keys(updatePayload.propertyUpdates)) {
       const widget = this.getGtkWidget() as any;
