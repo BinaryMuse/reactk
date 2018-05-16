@@ -23,7 +23,12 @@ sudo apt-get install libgirepository1.0-dev libgtk-3-dev
 
 Otherwise, make sure to install GKT+ 3 and GObject Introspection with your package manager of choice. Hopefully the output of `npm install` guides your way.
 
-## Testing
+## Running Examples
+
+```bash
+npm run react-example # the React-based example
+npm run gtk-example # the pure-GTK, non-React example (for reference)
+```
 
 ```
 ./node_modules/.bin/ts-node examples/reactk-test.tsx

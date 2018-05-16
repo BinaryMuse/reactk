@@ -4,7 +4,8 @@
   "description": "gtk+ 3 in React",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "gtk-example": "ts-node examples/pure-gtk-test.ts",
+    "react-example": "ts-node examples/reactk-test.tsx"
   },
   "keywords": [],
   "author": "Michelle Tilley <michelle@michelletilley.net>",
