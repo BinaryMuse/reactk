@@ -20,6 +20,7 @@ win.connect("destroy", () => {
 let clickCount = 0;
 button.connect("clicked", () => {
   button.setLabel(`Clicked ${++clickCount} times`);
+  win.setBorderWidth(10 + clickCount);
 });
 
 win.showAll();

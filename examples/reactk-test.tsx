@@ -25,7 +25,7 @@ class Application extends React.Component<{}, AppState> {
         title={`ReacTK Test! ${this.state.clickCount}`}
         resizable={true}
         windowPosition={gtk.WindowPosition.CENTER}
-        borderWidth={10}
+        borderWidth={10 + this.state.clickCount}
       >
         <button onClicked={this.handleClick.bind(this)}>{btnText}</button>
       </window>
