@@ -23,7 +23,7 @@ const ReacTK = {
   render(element, callback) {
     // Our container is a sort of "environment" in which the host React
     // application will live. It can be anything. Here, we're using an instance
-    // of a GTK+3 API, but you might have a handle to a window, a reference to a
+    // of a GTK+ 3 API, but you might have a handle to a window, a reference to a
     // 3D drawing context, or some other dynamically allocated, non-global
     // resource.
 

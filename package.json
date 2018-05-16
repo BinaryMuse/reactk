@@ -1,7 +1,7 @@
 {
   "name": "reactk",
   "version": "1.0.0",
-  "description": "gtk+3 in React",
+  "description": "gtk+ 3 in React",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
