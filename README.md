@@ -6,6 +6,8 @@ Experiments in controlling GTK+ 3 with React.
 
 ### macOS
 
+The Homebrew `gobject-introspection` formula depends on `libffi`, which installs as keg-only on macOS. We need to set the `PKG_CONFIG_PATH` environment variable during the `npm install` step so that [node-gir](https://github.com/Place1/node-gir) (which is used for the GTK bindings) can build properly:
+
 ```
 brew install gobject-introspection gtk+3
 PKG_CONFIG_PATH="/usr/local/opt/libffi/lib/pkgconfig" npm i
