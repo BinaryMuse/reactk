@@ -16,7 +16,10 @@ type Props = {
 };
 
 type UpdatePayload = {
-  [key: string]: any;
+  signalSet: SignalSet;
+  propertyUpdates: {
+    [key: string]: any;
+  };
 };
 
 type SignalSet = {
