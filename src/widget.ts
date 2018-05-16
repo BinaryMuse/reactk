@@ -291,7 +291,7 @@ export class Button extends WidgetWrapper {
     hostContext: HostContext
   ) {
     if (props.children && typeof props.children === "string") {
-      this.setLabel(props.children);
+      this.getGtkWidget().setLabel(props.children);
     }
   }
 
@@ -308,9 +308,5 @@ export class Button extends WidgetWrapper {
     }
 
     return payload;
-  }
-
-  protected setLabel(label: string) {
-    this.getGtkWidget().setLabel(label);
   }
 }
