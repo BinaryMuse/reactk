@@ -99,7 +99,9 @@ function collectSignals(
 }
 
 export class WidgetWrapper {
+  protected container: Container;
   private signals: Map<string, Signal> = new Map();
+  private pendingChildren: Array<WidgetWrapper> = [];
   private gtkWidget: GtkWidget;
 
   public static readonly type: string = "<ROOT>";
@@ -126,39 +128,59 @@ export class WidgetWrapper {
     container: Container,
     hostContext: HostContext
   ) {
+    this.container = container;
+  }
+
+  public getGtkWidget(): GtkWidget {
+    if (!this.gtkWidget) {
+      throw new Error("Cannot get GTK widget as it has not yet been created.");
+    }
+
+    return this.gtkWidget;
+  }
+
+  private createGtkWidget(type: string, props: Props): void {
+    if (this.gtkWidget) {
+      throw new Error("GTK widget is already created.");
+    }
+
     const fixedProps = formatPropsForGtk(props);
     const { normalProps, signals } = collectSignals(fixedProps);
 
     const constructor = WidgetWrapper.forType(type);
-    this.gtkWidget = container.createGtkWidget(constructor.type, normalProps);
+    this.gtkWidget = this.container.createGtkWidget(
+      constructor.type,
+      normalProps
+    );
     this.setSignals(signals);
   }
 
-  public getGtkWidget(): GtkWidget {
-    return this.gtkWidget;
+  // Called by our reconciler — render phase
+  public appendInitialChild(child: WidgetWrapper): void {
+    this.pendingChildren.push(child);
   }
 
-  // Called by our reconciler
+  // Called by our reconciler — commit phase
   public add(child: WidgetWrapper): void {
     this.gtkWidget.add(child.getGtkWidget());
   }
 
-  // Called by our reconciler
+  // Called by our reconciler — commit phase
   public remove(child: WidgetWrapper): void {
     this.gtkWidget.remove(child.getGtkWidget());
   }
 
-  // Called by our reconciler
+  // Called by our reconciler — render phase
   public finalizeInitialChildren(
     type: string,
     props: Props,
     container: Container,
     hostContext: Props
   ): boolean {
-    return false;
+    return true;
   }
 
-  // Called by our reconciler
+  // Called by our reconciler — render phase
   public prepareUpdate(
     type: string,
     oldProps: Props,
@@ -193,12 +215,17 @@ export class WidgetWrapper {
     return updatePayload;
   }
 
-  // Called by our reconciler
+  // Called by our reconciler — commit phase
   public commitMount(type: string, props: Props): void {
-    // no-op, only caled if `finalizeInitialChildren` returns true
+    this.createGtkWidget(type, props);
+
+    for (const child of this.pendingChildren) {
+      this.add(child);
+    }
+    this.pendingChildren.length = 0;
   }
 
-  // Called by our reconciler
+  // Called by our reconciler — commit phase
   public commitUpdate(
     type: string,
     updatePayload: UpdatePayload,
@@ -264,30 +291,22 @@ export class WidgetWrapper {
 
 export class Window extends WidgetWrapper {
   public static readonly type: string = "Window";
-
-  public finalizeInitialChildren(
-    type: string,
-    props: Props,
-    container: Container,
-    hostContext: HostContext
-  ): boolean {
-    // Feels like this should go in commitMount,
-    // but we need info from the host context
-    // to decide when to stop the GTK event loop.
-    const win = this.getGtkWidget();
-    hostContext.openWindows++;
-    win.connect("destroy", () => {
-      hostContext.openWindows--;
-      if (hostContext.openWindows <= 0) {
-        container.stopGtk();
-      }
-    });
-
-    return true;
-  }
+  // This used to live on the host context, but we need access to it
+  // during the commit phase.
+  private static numOpenWindows = 0;
 
   public commitMount(type: string, props: Props): void {
+    super.commitMount(type, props);
     const win = this.getGtkWidget();
+    const klass = this.constructor as typeof Window;
+
+    win.connect("destroy", () => {
+      klass.numOpenWindows--;
+      if (klass.numOpenWindows <= 0) {
+        this.container.stopGtk();
+      }
+    });
+    klass.numOpenWindows++;
     win.showAll();
   }
 }
@@ -300,22 +319,6 @@ export class Button extends WidgetWrapper {
   // relationship.
   public static shouldSetTextContent(props: Props): boolean {
     return true;
-  }
-
-  public finalizeInitialChildren(
-    type: string,
-    props: Props,
-    container: Container,
-    hostContext: HostContext
-  ): boolean {
-    if (
-      props.children &&
-      (typeof props.children === "string" || typeof props.children === "number")
-    ) {
-      return true;
-    }
-
-    return false;
   }
 
   public prepareUpdate(
@@ -334,6 +337,13 @@ export class Button extends WidgetWrapper {
   }
 
   public commitMount(type: string, props: Props): void {
-    this.getGtkWidget().setLabel(props.children);
+    super.commitMount(type, props);
+
+    if (
+      props.children &&
+      (typeof props.children === "string" || typeof props.children === "number")
+    ) {
+      this.getGtkWidget().setLabel(props.children);
+    }
   }
 }

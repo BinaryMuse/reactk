@@ -30,7 +30,7 @@ const hostConfig = {
   },
 
   appendInitialChild(parentInstance, child) {
-    parentInstance.add(child);
+    parentInstance.appendInitialChild(child);
   },
 
   finalizeInitialChildren(
