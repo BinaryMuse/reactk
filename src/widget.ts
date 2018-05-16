@@ -42,12 +42,12 @@ interface HostContext {
 
 export const DEFAULT_HOST_CONTEXT = { openWindows: 0 };
 
-function isSignal(signal) {
+function isSignal(signal: string) {
   return signal.startsWith("on-");
 }
 
 // "onClicked" => "on-clicked"
-function dasherize(str) {
+function dasherize(str: string) {
   const regex = /[A-Z](?:(?=[^A-Z])|[A-Z]*(?=[A-Z][^A-Z]|$))/g;
   return str.replace(regex, (s, i) => {
     return (i > 0 ? "-" : "") + s.toLowerCase();
