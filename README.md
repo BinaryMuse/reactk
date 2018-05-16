@@ -13,7 +13,13 @@ PKG_CONFIG_PATH="/usr/local/opt/libffi/lib/pkgconfig" npm i
 
 ### Others
 
-I'm not sure, but you need GKT+ 3 and gobject-introspection installed from your package manager of choice. Hopefully the output of `npm install` guides your way.
+On Debian-like systems, install GObject Introspection and GKT+ 3 (if it's not already installed):
+
+```
+sudo apt-get install libgirepository1.0-dev libgtk-3-dev
+```
+
+Otherwise, make sure to install GKT+ 3 and GObject Introspection with your package manager of choice. Hopefully the output of `npm install` guides your way.
 
 ## Testing
 
