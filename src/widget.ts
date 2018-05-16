@@ -15,12 +15,20 @@ type Props = {
   [key: string]: any;
 };
 
+type UpdatePayload = {
+  [key: string]: any;
+};
+
 type SignalSet = {
   [signal: string]: Function;
 };
 
+interface Signal {
+  callback: Function;
+  handle: number;
+}
+
 export interface Container {
-  startGtk: () => void;
   createGtkWidget: (type: string, props: Props) => GtkWidget;
   stopGtk: () => void;
 }
@@ -41,6 +49,18 @@ function dasherize(str) {
   return str.replace(regex, (s, i) => {
     return (i > 0 ? "-" : "") + s.toLowerCase();
   });
+}
+
+// "on-clicked" => "onClicked"
+function camelcase(str: string) {
+  return str
+    .split("-")
+    .map(capitalize)
+    .join("");
+}
+
+function capitalize(str: string) {
+  return str[0].toUpperCase() + str.substr(1);
 }
 
 function formatPropsForGtk(props: Props): Props {
@@ -75,7 +95,7 @@ function collectSignals(
 export class WidgetWrapper {
   protected props: Props;
   private type: string;
-  private signals: Map<string, number> = new Map();
+  private signals: Map<string, Signal> = new Map();
   private gtkWidget: GtkWidget;
 
   public static readonly type: string = "<ROOT>";
@@ -134,6 +154,60 @@ export class WidgetWrapper {
     // no-op
   }
 
+  // Called by our reconciler
+  public prepareUpdate(
+    type: string,
+    oldProps: Props,
+    newProps: Props,
+    hostContext: HostContext
+  ): UpdatePayload {
+    const updatePayload = {
+      signalSet: {},
+      propertyUpdates: {}
+    };
+
+    const fixedOldProps = formatPropsForGtk(oldProps);
+    const fixedNewProps = formatPropsForGtk(newProps);
+    const { normalProps: oldNormalProps } = collectSignals(fixedOldProps);
+    const { normalProps: newNormalProps, signals } = collectSignals(
+      fixedNewProps
+    );
+
+    // All signals that should be present on the Widget should be
+    // returned, not only new and changed ones. Widget only re-assigns
+    // a signal if the callback has actually changed.
+    updatePayload.signalSet = signals;
+
+    for (const key of Object.keys(newNormalProps)) {
+      if (newNormalProps[key] !== oldNormalProps[key]) {
+        const camelCased = camelcase(key);
+        const update = `set${camelCased}`;
+        updatePayload.propertyUpdates[update] = newNormalProps[key];
+      }
+    }
+
+    return updatePayload;
+  }
+
+  // Called by our reconciler
+  public commitUpdate(
+    type: string,
+    updatePayload: UpdatePayload,
+    oldProps: Props,
+    newProps: Props
+  ) {
+    this.props = newProps;
+    this.applyPropertyUpdates(updatePayload);
+  }
+
+  protected applyPropertyUpdates(updatePayload: Props) {
+    this.setSignals(updatePayload.signalSet);
+    for (const update of Object.keys(updatePayload.propertyUpdates)) {
+      const widget = this.getGtkWidget() as any;
+      widget[update](updatePayload.propertyUpdates[update]);
+    }
+  }
+
   protected setSignals(signals: SignalSet) {
     // Remove any existing signals that aren't in the new set
     const currentSignals = [...this.signals.keys()];
@@ -149,16 +223,19 @@ export class WidgetWrapper {
     }
   }
 
-  protected attachSignal(signal, callback): number {
+  protected attachSignal(signal: string, callback: Function) {
     // Only one connection per signal per widget allowed
     if (this.signals.has(signal)) {
+      const sig = this.signals.get(signal)!;
+      if (sig.callback === callback) {
+        return;
+      }
       this.detachSignal(signal);
     }
 
     try {
-      const id = this.gtkWidget.connect(signal, callback);
-      this.signals.set(signal, id);
-      return id;
+      const handle = this.gtkWidget.connect(signal, callback);
+      this.signals.set(signal, { handle, callback });
     } catch {
       throw new Error(
         `Could not attach signal '${signal}' to widget of type '${this.type}'`
@@ -167,10 +244,10 @@ export class WidgetWrapper {
   }
 
   protected detachSignal(signal) {
-    const id = this.signals.get(signal);
-    if (id) {
+    const sig = this.signals.get(signal);
+    if (sig) {
       this.signals.delete(signal);
-      this.gtkWidget.disconnect(id);
+      this.gtkWidget.disconnect(sig.handle);
     }
   }
 }
@@ -213,6 +290,21 @@ export class Button extends WidgetWrapper {
     if (props.children && typeof props.children === "string") {
       this.setLabel(props.children);
     }
+  }
+
+  public prepareUpdate(
+    type: string,
+    oldProps: Props,
+    newProps: Props,
+    hostContext: HostContext
+  ): UpdatePayload {
+    const payload = super.prepareUpdate(type, oldProps, newProps, hostContext);
+
+    if (oldProps.children !== newProps.children) {
+      payload.propertyUpdates.setLabel = newProps.children || "";
+    }
+
+    return payload;
   }
 
   protected setLabel(label: string) {

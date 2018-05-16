@@ -1,14 +1,10 @@
 import * as React from "react";
 import { ReactElement } from "react";
+import { Gtk as gtk } from "node-gir";
 
-import gtk from "./gtk";
 import GtkReconciler from "./src/reconciler";
 
 class GtkApi {
-  startGtk() {
-    gtk.main();
-  }
-
   createGtkWidget(type, props) {
     const constructor = gtk[type]; // e.g. gtk.Window
     return new constructor(props);
@@ -46,6 +42,7 @@ const ReacTK = {
     // Kick off a render by asking our reconciler to update the react container
     // above with the element the user provided.
     GtkReconciler.updateContainer(element, root, undefined, callback);
+    gtk.main();
   }
 };
 

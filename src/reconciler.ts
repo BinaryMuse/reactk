@@ -1,5 +1,4 @@
 import * as ReactReconciler from "react-reconciler";
-import gtk from "../gtk";
 import { WidgetWrapper, DEFAULT_HOST_CONTEXT } from "./widget";
 
 const hostConfig = {
@@ -56,7 +55,7 @@ const hostConfig = {
     rootContainerInstance,
     hostContext
   ) {
-    // TODO
+    return instance.prepareUpdate(type, oldProps, newProps, hostContext);
   },
 
   shouldSetTextContent(type, props): boolean {
@@ -110,7 +109,7 @@ const hostConfig = {
       newProps,
       internalInstanceHandle
     ) {
-      console.log("commitUpdate");
+      instance.commitUpdate(type, updatePayload, oldProps, newProps);
     },
 
     commitMount(instance, type, newProps, internalInstanceHandle) {
@@ -131,7 +130,7 @@ const hostConfig = {
     },
 
     appendChildToContainer(container, child) {
-      container.startGtk();
+      // no-op
     },
 
     insertBefore(parentInstane, child, beforeChild) {
