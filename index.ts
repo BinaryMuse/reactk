@@ -12,6 +12,10 @@ class GtkApi implements Container {
     this.gtkBindings = gtkBindings;
   }
 
+  gtk() {
+    return this.gtkBindings;
+  }
+
   startGtk() {
     this.gtkBindings.main();
   }

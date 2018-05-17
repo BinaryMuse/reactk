@@ -2,6 +2,7 @@ declare namespace JSX {
   interface IntrinsicElements {
     window: any;
     button: any;
+    image: any;
   }
 }
 

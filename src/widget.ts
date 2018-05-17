@@ -27,6 +27,8 @@ export class WidgetWrapper {
         return Window;
       case "button":
         return Button;
+      case "image":
+        return Image;
       default:
         throw new Error(`Unknown widget type: ${type}`);
     }
@@ -182,6 +184,18 @@ export class WidgetWrapper {
 export class Window extends WidgetWrapper {
   public static readonly type: string = "Window";
 
+  private static openWindows: number = 0;
+
+  incrementOpenWindows(amount: number): number {
+    const constr = this.constructor as typeof Window;
+    constr.openWindows += amount;
+    return constr.openWindows;
+  }
+
+  getOpenWindows(): number {
+    return (this.constructor as typeof Window).openWindows;
+  }
+
   public finalizeInitialChildren(
     type: string,
     props: Props,
@@ -191,15 +205,15 @@ export class Window extends WidgetWrapper {
     const win = this.getGtkWidget();
 
     win.connect("show", () => {
-      hostContext.openWindows++;
+      this.incrementOpenWindows(1);
     });
 
     win.connect("hide", () => {
-      hostContext.openWindows--;
+      this.incrementOpenWindows(-1);
     });
 
     win.connect("destroy", () => {
-      if (hostContext.openWindows <= 0) {
+      if (this.getOpenWindows() <= 0) {
         container.stopGtk();
       }
     });
@@ -208,7 +222,9 @@ export class Window extends WidgetWrapper {
   }
 
   public commitMount(type: string, props: Props): void {
-    this.getGtkWidget().showAll();
+    if (props.visible === void 0 || !!props.visible) {
+      this.getGtkWidget().showAll();
+    }
   }
 }
 
@@ -252,4 +268,8 @@ export class Button extends WidgetWrapper {
 
     return false;
   }
+}
+
+export class Image extends WidgetWrapper {
+  public static readonly type: string = "Image";
 }

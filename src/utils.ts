@@ -1,4 +1,5 @@
 import { GtkWidget } from "./gtk-utils";
+import { GtkBindings } from "node-gir";
 
 export type Constructor = { new (...args: any[]): any };
 
@@ -23,6 +24,7 @@ export interface Signal {
 }
 
 export interface Container {
+  gtk: () => any;
   startGtk: () => void;
   createGtkWidget: (type: string, props: Props) => GtkWidget;
   stopGtk: () => void;
@@ -54,4 +56,10 @@ export function dasherize(str: string) {
 
 export function capitalize(str: string) {
   return str[0].toUpperCase() + str.substr(1);
+}
+
+export function nonexistantOrTruthy(value): boolean {
+  if (value === void 0 || !!value) {
+    return true;
+  }
 }

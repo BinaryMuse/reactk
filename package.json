@@ -19,6 +19,7 @@
   "devDependencies": {
     "@types/node": "^10.1.0",
     "@types/react": "^16.3.14",
+    "screenres": "^2.0.1",
     "ts-node": "^6.0.3",
     "tslint": "^5.10.0",
     "typescript": "^2.8.3"
