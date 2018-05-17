@@ -11,9 +11,7 @@ import {
 } from "./utils";
 
 export class WidgetWrapper {
-  protected container: Container;
   private signals: Map<string, Signal> = new Map();
-  private pendingChildren: Array<WidgetWrapper> = [];
   private gtkWidget: GtkWidget;
 
   public static readonly type: string = "<ROOT>";
@@ -40,36 +38,21 @@ export class WidgetWrapper {
     container: Container,
     hostContext: HostContext
   ) {
-    this.container = container;
-  }
-
-  public getGtkWidget(): GtkWidget {
-    if (!this.gtkWidget) {
-      throw new Error("Cannot get GTK widget as it has not yet been created.");
-    }
-
-    return this.gtkWidget;
-  }
-
-  private createGtkWidget(type: string, props: Props): void {
-    if (this.gtkWidget) {
-      throw new Error("GTK widget is already created.");
-    }
-
     const fixedProps = formatPropsForGtk(props);
     const { normalProps, signals } = collectSignals(fixedProps);
 
     const constructor = WidgetWrapper.forType(type);
-    this.gtkWidget = this.container.createGtkWidget(
-      constructor.type,
-      normalProps
-    );
+    this.gtkWidget = container.createGtkWidget(constructor.type, normalProps);
     this.setSignals(signals);
+  }
+
+  public getGtkWidget(): GtkWidget {
+    return this.gtkWidget;
   }
 
   // Called by our reconciler — render phase
   public appendInitialChild(child: WidgetWrapper): void {
-    this.pendingChildren.push(child);
+    this.add(child);
   }
 
   // Called by our reconciler — commit phase
@@ -89,7 +72,7 @@ export class WidgetWrapper {
     container: Container,
     hostContext: Props
   ): boolean {
-    return true;
+    return false;
   }
 
   // Called by our reconciler — render phase
@@ -129,12 +112,7 @@ export class WidgetWrapper {
 
   // Called by our reconciler — commit phase
   public commitMount(type: string, props: Props): void {
-    this.createGtkWidget(type, props);
-
-    for (const child of this.pendingChildren) {
-      this.add(child);
-    }
-    this.pendingChildren.length = 0;
+    // called if finalizeInitialChildren returns true
   }
 
   // Called by our reconciler — commit phase
@@ -203,23 +181,34 @@ export class WidgetWrapper {
 
 export class Window extends WidgetWrapper {
   public static readonly type: string = "Window";
-  // This used to live on the host context, but we need access to it
-  // during the commit phase.
-  private static numOpenWindows = 0;
 
-  public commitMount(type: string, props: Props): void {
-    super.commitMount(type, props);
+  public finalizeInitialChildren(
+    type: string,
+    props: Props,
+    container: Container,
+    hostContext: HostContext
+  ): boolean {
     const win = this.getGtkWidget();
-    const klass = this.constructor as typeof Window;
+
+    win.connect("show", () => {
+      hostContext.openWindows++;
+    });
+
+    win.connect("hide", () => {
+      hostContext.openWindows--;
+    });
 
     win.connect("destroy", () => {
-      klass.numOpenWindows--;
-      if (klass.numOpenWindows <= 0) {
-        this.container.stopGtk();
+      if (hostContext.openWindows <= 0) {
+        container.stopGtk();
       }
     });
-    klass.numOpenWindows++;
-    win.showAll();
+
+    return true;
+  }
+
+  public commitMount(type: string, props: Props): void {
+    this.getGtkWidget().showAll();
   }
 }
 
@@ -248,14 +237,19 @@ export class Button extends WidgetWrapper {
     return payload;
   }
 
-  public commitMount(type: string, props: Props): void {
-    super.commitMount(type, props);
-
+  public finalizeInitialChildren(
+    type: string,
+    props: Props,
+    container: Container,
+    hostContext: HostContext
+  ): boolean {
     if (
       props.children &&
       (typeof props.children === "string" || typeof props.children === "number")
     ) {
       this.getGtkWidget().setLabel(props.children);
     }
+
+    return false;
   }
 }
