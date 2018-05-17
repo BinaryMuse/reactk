@@ -2,9 +2,10 @@ import * as React from "react";
 import { ReactElement } from "react";
 import { GtkBindings } from "node-gir";
 
+import { Container } from "./src/utils";
 import GtkReconciler from "./src/reconciler";
 
-class GtkApi {
+class GtkApi implements Container {
   private gtkBindings: GtkBindings;
 
   constructor(gtkBindings) {

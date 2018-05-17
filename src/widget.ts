@@ -1,102 +1,14 @@
-interface GtkWidget {
-  add: (child: GtkWidget) => void;
-  remove: (child: GtkWidget) => void;
-
-  connect: (signal: string, callback: Function) => number;
-  disconnect: (number) => void;
-
-  setLabel: (string) => void;
-  showAll: () => void;
-}
-
-type Constructor = { new (...args: any[]): any };
-
-type Props = {
-  [key: string]: any;
-};
-
-type UpdatePayload = {
-  signalSet: SignalSet;
-  propertyUpdates: {
-    [key: string]: any;
-  };
-};
-
-type SignalSet = {
-  [signal: string]: Function;
-};
-
-interface Signal {
-  callback: Function;
-  handle: number;
-}
-
-export interface Container {
-  createGtkWidget: (type: string, props: Props) => GtkWidget;
-  stopGtk: () => void;
-}
-
-interface HostContext {
-  openWindows: number;
-}
-
-export const DEFAULT_HOST_CONTEXT = { openWindows: 0 };
-
-function isSignal(signal: string) {
-  return signal.startsWith("on-");
-}
-
-// "onClicked" => "on-clicked"
-function dasherize(str: string) {
-  const regex = /[A-Z](?:(?=[^A-Z])|[A-Z]*(?=[A-Z][^A-Z]|$))/g;
-  return str.replace(regex, (s, i) => {
-    return (i > 0 ? "-" : "") + s.toLowerCase();
-  });
-}
-
-// "on-clicked" => "onClicked"
-function camelcase(str: string) {
-  return str
-    .split("-")
-    .map(capitalize)
-    .join("");
-}
-
-function capitalize(str: string) {
-  return str[0].toUpperCase() + str.substr(1);
-}
-
-// Turns React style props to options that can be passed
-// to GTK widget constructors. Dasherizes all props and
-// removes `children`.
-function formatPropsForGtk(props: Props): Props {
-  const newProps: Props = Object.keys(props).reduce((acc, key) => {
-    const newKey = dasherize(key);
-    acc[newKey] = props[key];
-    return acc;
-  }, {});
-
-  delete newProps.children;
-  return newProps;
-}
-
-function collectSignals(
-  dasherizedProps: Props
-): { normalProps: Props; signals: SignalSet } {
-  const normalProps = {};
-  const signals = {};
-
-  for (const key of Object.keys(dasherizedProps)) {
-    if (isSignal(key)) {
-      const newKey = key.substr(3); // e.g. strip "on-" from "on-clicked"
-      signals[newKey] = dasherizedProps[key];
-    } else {
-      normalProps[key] = dasherizedProps[key];
-    }
-  }
-
-  return { normalProps, signals };
-}
+import { GtkWidget, formatPropsForGtk, collectSignals } from "./gtk-utils";
+import {
+  Constructor,
+  Props,
+  UpdatePayload,
+  SignalSet,
+  Signal,
+  Container,
+  HostContext,
+  camelcase
+} from "./utils";
 
 export class WidgetWrapper {
   protected container: Container;

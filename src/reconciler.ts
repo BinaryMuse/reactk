@@ -1,9 +1,11 @@
 import * as ReactReconciler from "react-reconciler";
-import { WidgetWrapper, DEFAULT_HOST_CONTEXT } from "./widget";
+
+import { WidgetWrapper } from "./widget";
+import { getDefaultHostContext } from "./utils";
 
 const hostConfig = {
   getRootHostContext(rootContainerInstance) {
-    return DEFAULT_HOST_CONTEXT;
+    return getDefaultHostContext();
   },
 
   getChildHostContext(parentHostContext, type, instance) {
