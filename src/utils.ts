@@ -57,9 +57,3 @@ export function dasherize(str: string) {
 export function capitalize(str: string) {
   return str[0].toUpperCase() + str.substr(1);
 }
-
-export function nonexistantOrTruthy(value): boolean {
-  if (value === void 0 || !!value) {
-    return true;
-  }
-}
