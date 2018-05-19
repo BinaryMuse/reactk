@@ -56,22 +56,14 @@ export class WidgetWrapper {
     return this.gtkWidget;
   }
 
-  // Called by our reconciler — render phase
+  // ========================
+  // Reconciler: render phase
+  // ========================
+
   public appendInitialChild(child: WidgetWrapper): void {
     this.add(child);
   }
 
-  // Called by our reconciler — commit phase
-  public add(child: WidgetWrapper): void {
-    this.gtkWidget.add(child.getGtkWidget());
-  }
-
-  // Called by our reconciler — commit phase
-  public remove(child: WidgetWrapper): void {
-    this.gtkWidget.remove(child.getGtkWidget());
-  }
-
-  // Called by our reconciler — render phase
   public finalizeInitialChildren(
     type: string,
     props: Props,
@@ -81,7 +73,6 @@ export class WidgetWrapper {
     return false;
   }
 
-  // Called by our reconciler — render phase
   public prepareUpdate(
     type: string,
     oldProps: Props,
@@ -119,22 +110,28 @@ export class WidgetWrapper {
     return updatePayload;
   }
 
-  // Called by our reconciler — commit phase
+  // ========================
+  // Reconciler: commit phase
+  // ========================
+
+  public add(child: WidgetWrapper): void {
+    this.gtkWidget.add(child.getGtkWidget());
+  }
+
+  public remove(child: WidgetWrapper): void {
+    this.gtkWidget.remove(child.getGtkWidget());
+  }
+
   public commitMount(type: string, props: Props): void {
     // called if finalizeInitialChildren returns true
   }
 
-  // Called by our reconciler — commit phase
   public commitUpdate(
     type: string,
     updatePayload: UpdatePayload,
     oldProps: Props,
     newProps: Props
   ): void {
-    this.applyPropertyUpdates(updatePayload);
-  }
-
-  protected applyPropertyUpdates(updatePayload: UpdatePayload): void {
     this.signalManager.set(updatePayload.signalSet);
     for (const update of Object.keys(updatePayload.propertyUpdates)) {
       const widget = this.getGtkWidget() as any;
