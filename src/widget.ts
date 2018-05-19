@@ -1,4 +1,4 @@
-import { GtkWidget, formatPropsForGtk, collectSignals } from "./gtk-utils";
+import { GtkWidget, formatPropsForGtk } from "./gtk-utils";
 import {
   Constructor,
   Props,
@@ -9,6 +9,7 @@ import {
   HostContext,
   camelcase
 } from "./utils";
+import SignalManager from "./signal-manager";
 
 type WidgetRegistry = {
   [key: string]: typeof WidgetWrapper;
@@ -17,6 +18,7 @@ type WidgetRegistry = {
 export class WidgetWrapper {
   private signals: Map<string, Signal> = new Map();
   private gtkWidget: GtkWidget;
+  protected signalManager: SignalManager;
 
   public static readonly type: string = "<ROOT>";
 
@@ -42,11 +44,12 @@ export class WidgetWrapper {
     hostContext: HostContext
   ) {
     const fixedProps = formatPropsForGtk(props);
-    const { normalProps, signals } = collectSignals(fixedProps);
+    const { normalProps, signals } = SignalManager.collectSignals(fixedProps);
 
     const constructor = WidgetWrapper.forType(type);
     this.gtkWidget = container.createGtkWidget(constructor.type, normalProps);
-    this.setSignals(signals);
+    this.signalManager = new SignalManager(this.gtkWidget, type);
+    this.signalManager.set(signals);
   }
 
   public getGtkWidget(): GtkWidget {
@@ -92,10 +95,13 @@ export class WidgetWrapper {
 
     const fixedOldProps = formatPropsForGtk(oldProps);
     const fixedNewProps = formatPropsForGtk(newProps);
-    const { normalProps: oldNormalProps } = collectSignals(fixedOldProps);
-    const { normalProps: newNormalProps, signals } = collectSignals(
-      fixedNewProps
+    const { normalProps: oldNormalProps } = SignalManager.collectSignals(
+      fixedOldProps
     );
+    const {
+      normalProps: newNormalProps,
+      signals
+    } = SignalManager.collectSignals(fixedNewProps);
 
     // All signals that should be present on the Widget should be
     // returned, not only new and changed ones. Widget only re-assigns
@@ -129,55 +135,10 @@ export class WidgetWrapper {
   }
 
   protected applyPropertyUpdates(updatePayload: UpdatePayload): void {
-    this.setSignals(updatePayload.signalSet);
+    this.signalManager.set(updatePayload.signalSet);
     for (const update of Object.keys(updatePayload.propertyUpdates)) {
       const widget = this.getGtkWidget() as any;
       widget[update](updatePayload.propertyUpdates[update]);
-    }
-  }
-
-  protected setSignals(signals: SignalSet): void {
-    // Remove any existing signals that aren't in the new set
-    const currentSignals = [...this.signals.keys()];
-    currentSignals.forEach(signal => {
-      if (!signals[signal]) {
-        this.detachSignal(signal);
-      }
-    });
-
-    for (const signal of Object.keys(signals)) {
-      // Automatically overwrites existing signals
-      this.attachSignal(signal, signals[signal]);
-    }
-  }
-
-  protected attachSignal(signal: string, callback: Function): void {
-    // Only one connection per signal per widget allowed
-    if (this.signals.has(signal)) {
-      const sig = this.signals.get(signal)!;
-      if (sig.callback === callback) {
-        return;
-      }
-      this.detachSignal(signal);
-    }
-
-    try {
-      const handle = this.gtkWidget.connect(signal, callback);
-      this.signals.set(signal, { handle, callback });
-    } catch {
-      throw new Error(
-        `Could not attach signal '${signal}' to widget of type '${
-          (this.constructor as typeof WidgetWrapper).type
-        }'`
-      );
-    }
-  }
-
-  protected detachSignal(signal): void {
-    const sig = this.signals.get(signal);
-    if (sig) {
-      this.signals.delete(signal);
-      this.gtkWidget.disconnect(sig.handle);
     }
   }
 }

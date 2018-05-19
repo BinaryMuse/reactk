@@ -29,24 +29,3 @@ export function formatPropsForGtk(props: Props): Props {
   delete newProps.children;
   return newProps;
 }
-
-// Buckets props (with dasherized keys) into regular props and signals.
-// Signals aren't passed to the GTK widget constructors, but are
-// attached to the widgets separately.
-export function collectSignals(
-  dasherizedProps: Props
-): { normalProps: Props; signals: SignalSet } {
-  const normalProps = {};
-  const signals = {};
-
-  for (const key of Object.keys(dasherizedProps)) {
-    if (key.startsWith("on-")) {
-      const newKey = key.substr(3); // e.g. strip "on-" from "on-clicked"
-      signals[newKey] = dasherizedProps[key];
-    } else {
-      normalProps[key] = dasherizedProps[key];
-    }
-  }
-
-  return { normalProps, signals };
-}
